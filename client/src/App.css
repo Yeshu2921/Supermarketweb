@@ -1,376 +1,157 @@
 
-/* Main dashboard layout */
+/* =========================================
+   FreshMart Supermarket Management System
+   File: client/src/App.css
+   Purpose: Main layout and page content
+========================================= */
+
+/* Global dashboard layout */
 .admin-layout {
+  display: flex;
   min-height: 100vh;
   width: 100%;
   background: #f5f7fb;
 }
 
+/* Main area beside the sidebar */
 .admin-main {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
   width: calc(100% - 255px);
   margin-left: 255px;
   min-width: 0;
 }
 
-/* Top navigation */
-.admin-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 1030;
-  min-height: 78px;
-  padding: 12px 28px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: #ffffff;
-  border-bottom: 1px solid #e9edf3;
-  box-shadow: 0 2px 10px rgba(25, 42, 70, 0.025);
-}
-
-.topbar-heading {
-  min-width: 0;
-}
-
-.topbar-heading h5 {
-  margin: 0 0 4px;
-  color: #172b4d;
-  font-size: 17px;
-  font-weight: 800;
-}
-
-.topbar-heading p {
-  margin: 0;
-  color: #8b95a5;
-  font-size: 12px;
-}
-
-.topbar-actions {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-
-.mobile-menu-button {
-  display: none;
-  width: 40px;
-  height: 40px;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #e7ebf1;
-  border-radius: 10px;
-  background: #ffffff;
-  color: #25364f;
-  font-size: 24px;
-}
-
-/* Notification button */
-.notification-wrapper {
-  position: relative;
-}
-
-.notification-button {
-  position: relative;
-  width: 42px;
-  height: 42px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #e8edf3;
-  border-radius: 12px;
-  background: #ffffff;
-  color: #34445d;
-  font-size: 19px;
-  transition: 0.2s ease;
-}
-
-.notification-button:hover {
-  background: #f0faf5;
-  color: #13865c;
-}
-
-.notification-badge {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  min-width: 19px;
-  height: 19px;
-  padding: 0 5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid #ffffff;
-  border-radius: 20px;
-  background: #e5484d;
-  color: white;
-  font-size: 10px;
-  font-weight: 800;
-}
-
-.notification-dropdown {
-  position: absolute;
-  top: 52px;
-  right: 0;
-  z-index: 1100;
-  width: 360px;
-  max-width: calc(100vw - 24px);
-  overflow: hidden;
-  border: 1px solid #e9edf3;
-  border-radius: 15px;
-  background: #ffffff;
-  box-shadow: 0 16px 45px rgba(22, 36, 58, 0.16);
-}
-
-.notification-header {
-  padding: 17px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  border-bottom: 1px solid #edf0f4;
-}
-
-.notification-header h6 {
-  margin: 0 0 4px;
-  color: #172b4d;
-  font-weight: 800;
-}
-
-.notification-header small {
-  color: #8a95a5;
-  font-size: 11px;
-}
-
-.mark-read-button {
-  padding: 5px 0;
-  border: 0;
-  background: transparent;
-  color: #13865c;
-  font-size: 11px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.notification-list {
-  max-height: 350px;
-  overflow-y: auto;
-}
-
-.notification-item {
-  width: 100%;
-  padding: 14px 15px;
-  display: flex;
-  align-items: flex-start;
-  gap: 11px;
-  text-align: left;
-  border: 0;
-  border-bottom: 1px solid #f0f2f5;
-  background: #ffffff;
-}
-
-.notification-item:hover {
-  background: #f8fafc;
-}
-
-.notification-item.unread {
-  background: #f2fbf6;
-}
-
-.notification-icon {
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  background: #e2f5ea;
-  color: #13865c;
-  font-size: 16px;
-}
-
-.notification-content {
+/* Main page content changes when the user navigates */
+.admin-content {
   flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.notification-content strong {
-  color: #24354d;
-  font-size: 12px;
-}
-
-.notification-content > span {
-  color: #68778b;
-  font-size: 11px;
-  line-height: 1.5;
-}
-
-.notification-content small {
-  color: #9aa4b2;
-  font-size: 10px;
-}
-
-.unread-dot {
-  width: 7px;
-  height: 7px;
-  flex-shrink: 0;
-  margin-top: 5px;
-  border-radius: 50%;
-  background: #16a36a;
-}
-
-.notification-footer {
   width: 100%;
-  padding: 13px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 9px;
-  border: 0;
-  background: #ffffff;
-  color: #13865c;
-  font-size: 12px;
-  font-weight: 700;
+  min-width: 0;
+  padding: 24px;
 }
 
-.notification-footer:hover {
-  background: #f5faf7;
-}
-
-.empty-notifications {
-  padding: 25px 12px;
-  margin: 0;
-  text-align: center;
-  color: #8792a2;
-  font-size: 13px;
-}
-
-.topbar-divider {
-  width: 1px;
-  height: 35px;
-  background: #e9edf3;
-}
-
-.owner-topbar-profile {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.owner-topbar-avatar {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  background: #e3f5eb;
-  color: #13865c;
-  font-size: 21px;
-}
-
-.owner-topbar-text {
+/* Placeholder pages for features not yet implemented */
+.page-placeholder {
+  margin: 10px 0;
+  padding: 55px 25px;
+  min-height: 320px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-}
-
-.owner-topbar-text strong {
-  color: #25364f;
-  font-size: 12px;
-}
-
-.owner-topbar-text small {
-  color: #8c97a6;
-  font-size: 10px;
-}
-
-/* Placeholder for pages we build later */
-.page-placeholder {
-  margin: 28px;
-  padding: 55px 20px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: #ffffff;
   border: 1px solid #e9edf3;
   border-radius: 16px;
-  background: #ffffff;
-  text-align: center;
+  box-shadow: 0 5px 20px rgba(25, 42, 70, 0.035);
 }
 
 .page-placeholder > i {
-  color: #13865c;
-  font-size: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 20px;
+  border-radius: 20px;
+  background: #e9f8f1;
+  color: #16865d;
+  font-size: 30px;
 }
 
 .page-placeholder h3 {
-  margin-top: 18px;
-  color: #20334e;
-  font-weight: 800;
+  margin: 0 0 10px;
+  color: #172033;
+  font-size: 23px;
+  font-weight: 700;
 }
 
 .page-placeholder p {
-  margin: 12px auto 22px;
-  max-width: 450px;
+  max-width: 460px;
+  margin: 0;
+  color: #8290a3;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* Logout confirmation content */
+.logout-confirmation {
+  max-width: 550px;
+  margin: 50px auto;
+  padding: 35px;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid #e9edf3;
+  border-radius: 16px;
+  box-shadow: 0 5px 20px rgba(25, 42, 70, 0.04);
+}
+
+.logout-confirmation h3 {
+  margin-bottom: 12px;
+  color: #172033;
+  font-weight: 700;
+}
+
+.logout-confirmation p {
+  margin-bottom: 24px;
   color: #8290a3;
   line-height: 1.7;
 }
 
-/* Responsive layout */
+/* Keep images and controls from overflowing */
+.admin-content img {
+  max-width: 100%;
+}
+
+.admin-content input,
+.admin-content select,
+.admin-content textarea,
+.admin-content button {
+  max-width: 100%;
+}
+
+/* Tablet and mobile layout */
 @media (max-width: 991.98px) {
   .admin-main {
     width: 100%;
     margin-left: 0;
   }
 
-  .mobile-menu-button {
-    display: flex;
-  }
-
-  .admin-topbar {
-    padding: 12px 18px;
+  .admin-content {
+    padding: 20px;
   }
 }
 
+/* Small mobile screens */
 @media (max-width: 575.98px) {
-  .admin-topbar {
-    min-height: 68px;
-    padding: 10px 12px;
-    gap: 10px;
-  }
-
-  .topbar-heading h5 {
-    font-size: 15px;
-  }
-
-  .topbar-heading p {
-    font-size: 10px;
-  }
-
-  .topbar-actions {
-    gap: 9px;
-  }
-
-  .owner-topbar-text,
-  .topbar-divider {
-    display: none;
-  }
-
-  .notification-button {
-    width: 38px;
-    height: 38px;
-  }
-
-  .notification-dropdown {
-    position: fixed;
-    top: 72px;
-    right: 12px;
-    width: 360px;
+  .admin-content {
+    padding: 14px;
   }
 
   .page-placeholder {
-    margin: 14px;
+    margin: 0;
     padding: 35px 15px;
+    min-height: 280px;
+    border-radius: 12px;
+  }
+
+  .page-placeholder > i {
+    width: 60px;
+    height: 60px;
+    font-size: 25px;
+  }
+
+  .page-placeholder h3 {
+    font-size: 20px;
+  }
+
+  .page-placeholder p {
+    font-size: 13px;
+  }
+
+  .logout-confirmation {
+    margin: 25px auto;
+    padding: 24px 18px;
   }
 }

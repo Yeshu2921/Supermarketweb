@@ -1,278 +1,214 @@
 
 import { useState } from "react";
 
+import "./App.css";
+
+import Sidebar from "./components/Sidebar";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
+
 import OwnerLogin from "./pages/OwnerLogin";
 import Dashboard from "./pages/Dashboard";
 import Branches from "./pages/Branches";
-import Sidebar from "./components/Sidebar";
-
-import "./App.css";
 
 function App() {
+  // Login state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Current page
   const [activePage, setActivePage] = useState("Dashboard");
+
+  // Sidebar state for mobile screens
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Notification dropdown state
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
+  // Demo notifications
   const [notifications, setNotifications] = useState([
     {
       id: 1,
       title: "New customer message",
-      message: "A customer sent a message about product availability.",
-      time: "2 minutes ago",
-      type: "message",
-      unread: true,
+      message: "A customer has sent a new message.",
+      time: "5 minutes ago",
+      type: "info",
+      icon: "bi-chat-left-text",
+      read: false,
     },
     {
       id: 2,
       title: "Low stock alert",
-      message: "Cooking oil is running low in Bahir Dar Branch.",
-      time: "15 minutes ago",
-      type: "stock",
-      unread: true,
+      message: "Some products are running low in stock.",
+      time: "20 minutes ago",
+      type: "warning",
+      icon: "bi-exclamation-triangle",
+      read: false,
     },
     {
       id: 3,
-      title: "New supplier request",
+      title: "Supplier request",
       message: "A supplier request needs your attention.",
       time: "1 hour ago",
-      type: "supplier",
-      unread: true,
+      type: "info",
+      icon: "bi-truck",
+      read: true,
     },
   ]);
 
+  // Count unread notifications
   const unreadCount = notifications.filter(
-    (notification) => notification.unread
+    (notification) => !notification.read
   ).length;
 
-  function markAllAsRead() {
-    setNotifications((previous) =>
-      previous.map((notification) => ({
+  // Mark every notification as read
+  const markAllAsRead = () => {
+    setNotifications((previousNotifications) =>
+      previousNotifications.map((notification) => ({
         ...notification,
-        unread: false,
+        read: true,
       }))
     );
-  }
+  };
 
-  function handleNotificationClick(notificationId) {
-    setNotifications((previous) =>
-      previous.map((notification) =>
-        notification.id === notificationId
-          ? { ...notification, unread: false }
+  // Mark one notification as read when clicked
+  const handleNotificationClick = (id) => {
+    setNotifications((previousNotifications) =>
+      previousNotifications.map((notification) =>
+        notification.id === id
+          ? { ...notification, read: true }
           : notification
       )
     );
-  }
+  };
 
-  function handleLogout() {
+  // Open a page and close mobile menus
+  const handlePageChange = (page) => {
+    if (page === "Logout") {
+      setActivePage("Logout");
+    } else {
+      setActivePage(page);
+    }
+
+    setSidebarOpen(false);
+    setNotificationsOpen(false);
+  };
+
+  // Logout from the owner dashboard
+  const handleLogout = () => {
     setIsLoggedIn(false);
     setActivePage("Dashboard");
     setSidebarOpen(false);
     setNotificationsOpen(false);
-  }
+  };
 
-  // Display the owner login before entering the dashboard.
+  // Show login page before the dashboard
   if (!isLoggedIn) {
-    return <OwnerLogin onLogin={() => setIsLoggedIn(true)} />;
+    return (
+      <OwnerLogin
+        onLogin={() => {
+          setIsLoggedIn(true);
+          setActivePage("Dashboard");
+        }}
+      />
+    );
   }
 
-  return (
-    <div className="admin-layout">
-      {/* Sidebar navigation */}
-      <Sidebar
-        activePage={activePage}
-        setActivePage={setActivePage}
-        open={sidebarOpen}
-        setOpen={setSidebarOpen}
-      />
+  // Select the page displayed in the center
+  const renderPage = () => {
+    switch (activePage) {
+      case "Dashboard":
+        return <Dashboard />;
 
-      {/* Main application content */}
-      <main className="admin-main">
-        {/* Top navigation bar */}
-        <header className="admin-topbar">
-          <button
-            type="button"
-            className="mobile-menu-button"
-            onClick={() => setSidebarOpen((previous) => !previous)}
-            aria-label="Toggle sidebar"
-            aria-expanded={sidebarOpen}
-          >
-            <i className="bi bi-list"></i>
-          </button>
+      case "Branches":
+        return <Branches />;
 
-          <div className="topbar-heading">
-            <h5>{activePage}</h5>
-            <p>FreshMart / {activePage}</p>
-          </div>
+      case "Logout":
+        return (
+          <section className="logout-confirmation">
+            <div className="page-placeholder">
+              <i className="bi bi-box-arrow-right" aria-hidden="true" />
 
-          <div className="topbar-actions">
-            {/* Notifications */}
-            <div className="notification-wrapper">
-              <button
-                type="button"
-                className="notification-button"
-                onClick={() =>
-                  setNotificationsOpen((previous) => !previous)
-                }
-                aria-label="Show notifications"
-                aria-expanded={notificationsOpen}
-              >
-                <i className="bi bi-bell"></i>
+              <h3>Logout from FreshMart?</h3>
 
-                {unreadCount > 0 && (
-                  <span className="notification-badge">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
+              <p>
+                Are you sure you want to leave the owner dashboard?
+                You will need to log in again to access it.
+              </p>
 
-              {notificationsOpen && (
-                <div className="notification-dropdown">
-                  <div className="notification-header">
-                    <div>
-                      <h6>Notifications</h6>
-                      <small>
-                        {unreadCount} unread notification
-                        {unreadCount !== 1 ? "s" : ""}
-                      </small>
-                    </div>
+              <div className="d-flex justify-content-center flex-wrap gap-2 mt-4">
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => handlePageChange("Dashboard")}
+                >
+                  Cancel
+                </button>
 
-                    <button
-                      type="button"
-                      className="mark-read-button"
-                      onClick={markAllAsRead}
-                    >
-                      Mark all read
-                    </button>
-                  </div>
-
-                  <div className="notification-list">
-                    {notifications.length === 0 ? (
-                      <p className="empty-notifications">
-                        You have no notifications.
-                      </p>
-                    ) : (
-                      notifications.map((notification) => (
-                        <button
-                          type="button"
-                          key={notification.id}
-                          className={`notification-item ${
-                            notification.unread ? "unread" : ""
-                          }`}
-                          onClick={() =>
-                            handleNotificationClick(notification.id)
-                          }
-                        >
-                          <span className="notification-icon">
-                            <i
-                              className={`bi ${
-                                notification.type === "message"
-                                  ? "bi-chat-dots"
-                                  : notification.type === "stock"
-                                  ? "bi-exclamation-triangle"
-                                  : "bi-truck"
-                              }`}
-                            ></i>
-                          </span>
-
-                          <span className="notification-content">
-                            <strong>{notification.title}</strong>
-                            <span>{notification.message}</span>
-                            <small>{notification.time}</small>
-                          </span>
-
-                          {notification.unread && (
-                            <span className="unread-dot"></span>
-                          )}
-                        </button>
-                      ))
-                    )}
-                  </div>
-
-                  <button
-                    type="button"
-                    className="notification-footer"
-                    onClick={() => {
-                      markAllAsRead();
-                      setNotificationsOpen(false);
-                      setActivePage("Reports");
-                    }}
-                  >
-                    View all alerts
-                    <i className="bi bi-arrow-right"></i>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="topbar-divider"></div>
-
-            {/* Owner profile */}
-            <div className="owner-topbar-profile">
-              <div className="owner-topbar-avatar">
-                <i className="bi bi-person-fill"></i>
-              </div>
-
-              <div className="owner-topbar-text">
-                <strong>Owner</strong>
-                <small>Administrator</small>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={handleLogout}
+                >
+                  <i
+                    className="bi bi-box-arrow-right me-2"
+                    aria-hidden="true"
+                  />
+                  Yes, Logout
+                </button>
               </div>
             </div>
-          </div>
-        </header>
-
-        {/* Page routing */}
-        {activePage === "Dashboard" ? (
-          <Dashboard />
-        ) : activePage === "Branches" ? (
-          <Branches />
-        ) : activePage === "Logout" ? (
-          <section className="page-placeholder">
-            <i className="bi bi-box-arrow-right"></i>
-
-            <h3>Logout</h3>
-
-            <p>
-              Are you sure you want to leave the owner dashboard?
-            </p>
-
-            <button
-              type="button"
-              className="btn btn-danger me-2"
-              onClick={handleLogout}
-            >
-              Yes, Logout
-            </button>
-
-            <button
-              type="button"
-              className="btn btn-outline-secondary"
-              onClick={() => setActivePage("Dashboard")}
-            >
-              Cancel
-            </button>
           </section>
-        ) : (
+        );
+
+      default:
+        return (
           <section className="page-placeholder">
-            <i className="bi bi-grid"></i>
+            <i className="bi bi-tools" aria-hidden="true" />
 
             <h3>{activePage}</h3>
 
             <p>
-              The {activePage} management page will be developed next.
+              The {activePage} page is not implemented yet.
+              You can add its functionality here.
             </p>
-
-            <button
-              type="button"
-              className="btn btn-success"
-              onClick={() => setActivePage("Dashboard")}
-            >
-              <i className="bi bi-arrow-left me-2"></i>
-              Back to Dashboard
-            </button>
           </section>
-        )}
-      </main>
+        );
+    }
+  };
+
+  return (
+    <div className="admin-layout">
+      {/* Sidebar stays common across dashboard pages */}
+      <Sidebar
+        activePage={activePage}
+        setActivePage={handlePageChange}
+        open={sidebarOpen}
+        setOpen={setSidebarOpen}
+      />
+
+      <div className="admin-main">
+        {/* Header stays common across dashboard pages */}
+        <Header
+          activePage={activePage}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+          notifications={notifications}
+          unreadCount={unreadCount}
+          notificationsOpen={notificationsOpen}
+          setNotificationsOpen={setNotificationsOpen}
+          markAllAsRead={markAllAsRead}
+          handleNotificationClick={handleNotificationClick}
+          setActivePage={handlePageChange}
+        />
+
+        {/* Only this central content changes */}
+        <main className="admin-content">
+          {renderPage()}
+        </main>
+
+        {/* Footer stays common across dashboard pages */}
+        <Footer />
+      </div>
     </div>
   );
 }

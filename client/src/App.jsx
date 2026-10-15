@@ -6,7 +6,7 @@ import "./App.css";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-
+import MyProfile from "./pages/MyProfile";
 import OwnerLogin from "./pages/OwnerLogin";
 import Dashboard from "./pages/Dashboard";
 import Branches from "./pages/Branches";
@@ -118,7 +118,8 @@ function App() {
     switch (activePage) {
       case "Dashboard":
         return <Dashboard />;
-
+      case "My Profile":
+        return <MyProfile />;
       case "Branches":
         return <Branches />;
 

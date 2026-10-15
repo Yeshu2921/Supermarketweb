@@ -7,22 +7,64 @@ export default function OwnerLogin({ onLogin }) {
   const [forgotPassword, setForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  function handleLogin(e) {
-  e.preventDefault();
+  async function handleLogin(e) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
-  // Frontend demonstration only.
-  // Connect the Node.js API before using real accounts.
-  if (typeof onLogin === "function") {
-    onLogin();
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/auth/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: email.trim(),
+            password,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Login failed.");
+      }
+
+      // Keep the token for this browser session.
+      sessionStorage.setItem("freshmartToken", data.token);
+
+      // Pass the authenticated user to App.jsx.
+      if (typeof onLogin === "function") {
+        onLogin(data.user, data.token);
+      }
+    } catch (err) {
+      setError(
+        err.message === "Failed to fetch"
+          ? "Cannot connect to the server. Check that your backend is running."
+          : err.message || "Something went wrong. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   }
-}
 
   function handleReset(e) {
     e.preventDefault();
 
-    // Connect this to your secure password recovery API later.
-    alert("Password recovery API is not connected yet.");
+    setError(
+      "Password recovery is not connected yet. Contact your system administrator."
+    );
+  }
+
+  function returnToLogin() {
+    setForgotPassword(false);
+    setError("");
   }
 
   return (
@@ -87,10 +129,18 @@ export default function OwnerLogin({ onLogin }) {
               </p>
             </div>
 
+            {error && (
+              <div className="login-message login-error" role="alert">
+                {error}
+              </div>
+            )}
+
             {!forgotPassword ? (
               <form onSubmit={handleLogin}>
                 <div className="custom-input">
-                  <label htmlFor="owner-email">Email Address</label>
+                  <label htmlFor="owner-email">
+                    Email Address
+                  </label>
 
                   <input
                     id="owner-email"
@@ -100,11 +150,14 @@ export default function OwnerLogin({ onLogin }) {
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="username"
                     required
+                    disabled={loading}
                   />
                 </div>
 
                 <div className="custom-input">
-                  <label htmlFor="owner-password">Password</label>
+                  <label htmlFor="owner-password">
+                    Password
+                  </label>
 
                   <div className="password-wrapper">
                     <input
@@ -115,6 +168,7 @@ export default function OwnerLogin({ onLogin }) {
                       onChange={(e) => setPassword(e.target.value)}
                       autoComplete="current-password"
                       required
+                      disabled={loading}
                     />
 
                     <button
@@ -136,14 +190,22 @@ export default function OwnerLogin({ onLogin }) {
                   <button
                     type="button"
                     className="text-link"
-                    onClick={() => setForgotPassword(true)}
+                    onClick={() => {
+                      setForgotPassword(true);
+                      setError("");
+                    }}
                   >
                     Forgot password?
                   </button>
                 </div>
 
-                <button type="submit" className="login-submit">
-                  Sign In <span>→</span>
+                <button
+                  type="submit"
+                  className="login-submit"
+                  disabled={loading}
+                >
+                  {loading ? "Verifying..." : "Sign In"}
+                  {!loading && <span> →</span>}
                 </button>
               </form>
             ) : (
@@ -165,25 +227,23 @@ export default function OwnerLogin({ onLogin }) {
                 </div>
 
                 <p className="reset-help">
-                  If this email belongs to your owner account,
-                  you can receive a secure password reset link.
+                  Password recovery is not available yet.
+                  Please contact your system administrator.
                 </p>
 
                 <button type="submit" className="login-submit">
-                  Send Reset Link <span>→</span>
+                  Request Password Help <span>→</span>
                 </button>
 
                 <button
                   type="button"
                   className="back-to-login"
-                  onClick={() => setForgotPassword(false)}
+                  onClick={returnToLogin}
                 >
                   ← Back to Login
                 </button>
               </form>
             )}
-
-            
           </div>
         </section>
       </section>

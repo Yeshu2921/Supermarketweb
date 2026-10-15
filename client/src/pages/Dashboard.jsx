@@ -219,10 +219,7 @@ function Dashboard() {
         </div>
       </section>
 
-      <footer className="dashboard-footer">
-        <span>© 2026 FreshMart Management System</span>
-        <span>Designed for efficient supermarket management</span>
-      </footer>
+      
     </div>
   );
 }

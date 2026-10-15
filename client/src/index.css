@@ -1,0 +1,43 @@
+
+/* Global reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Main document */
+html,
+body,
+#root {
+  min-height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: #f4f7fb;
+  color: #122746;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Form controls */
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+/* Accessible keyboard focus */
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid #1677ee;
+  outline-offset: 3px;
+}
+
+/* Responsive images */
+img {
+  max-width: 100%;
+  height: auto;
+}

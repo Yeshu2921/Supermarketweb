@@ -5,9 +5,9 @@ import "./Sidebar.css";
 const menuItems = [
   { name: "Dashboard", icon: "bi-grid-1x2-fill" },
   { name: "Branches", icon: "bi-buildings-fill" },
+  { name: "User Management", icon: "bi-people-fill" },
   { name: "Products", icon: "bi-box-seam-fill" },
   { name: "Sales / POS", icon: "bi-cart-check-fill" },
-  { name: "Workers", icon: "bi-people-fill" },
   { name: "Suppliers", icon: "bi-truck" },
   { name: "Purchases", icon: "bi-bag-check-fill" },
   { name: "Inventory", icon: "bi-boxes" },

@@ -9,6 +9,8 @@ import Footer from "./components/Footer";
 import MyProfile from "./pages/MyProfile";
 import OwnerLogin from "./pages/OwnerLogin";
 import Dashboard from "./pages/Dashboard";
+import Suppliers from "./pages/Suppliers";
+import UserManagement from "./pages/UserManagement";
 import Branches from "./pages/Branches";
 
 function App() {
@@ -122,6 +124,10 @@ function App() {
         return <MyProfile />;
       case "Branches":
         return <Branches />;
+        case "User Management":
+        return <UserManagement />;
+       case "Suppliers":
+        return <Suppliers />;
 
       case "Logout":
         return (

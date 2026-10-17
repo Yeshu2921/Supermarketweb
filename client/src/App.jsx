@@ -1,17 +1,18 @@
 
 import { useState } from "react";
-
 import "./App.css";
 
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+
 import MyProfile from "./pages/MyProfile";
 import OwnerLogin from "./pages/OwnerLogin";
 import Dashboard from "./pages/Dashboard";
 import Suppliers from "./pages/Suppliers";
 import UserManagement from "./pages/UserManagement";
 import Branches from "./pages/Branches";
+import Categories from "./pages/Categories";
 
 function App() {
   // Login state
@@ -26,7 +27,7 @@ function App() {
   // Notification dropdown state
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
-  // Demo notifications
+  // Existing demo notifications
   const [notifications, setNotifications] = useState([
     {
       id: 1,
@@ -72,7 +73,7 @@ function App() {
     );
   };
 
-  // Mark one notification as read when clicked
+  // Mark one notification as read
   const handleNotificationClick = (id) => {
     setNotifications((previousNotifications) =>
       previousNotifications.map((notification) =>
@@ -83,14 +84,9 @@ function App() {
     );
   };
 
-  // Open a page and close mobile menus
+  // Change page and close mobile menus
   const handlePageChange = (page) => {
-    if (page === "Logout") {
-      setActivePage("Logout");
-    } else {
-      setActivePage(page);
-    }
-
+    setActivePage(page);
     setSidebarOpen(false);
     setNotificationsOpen(false);
   };
@@ -101,6 +97,9 @@ function App() {
     setActivePage("Dashboard");
     setSidebarOpen(false);
     setNotificationsOpen(false);
+
+    // Clear the saved authentication token
+    sessionStorage.removeItem("freshmartToken");
   };
 
   // Show login page before the dashboard
@@ -120,14 +119,21 @@ function App() {
     switch (activePage) {
       case "Dashboard":
         return <Dashboard />;
+
       case "My Profile":
         return <MyProfile />;
+
       case "Branches":
         return <Branches />;
-        case "User Management":
+
+      case "User Management":
         return <UserManagement />;
-       case "Suppliers":
+
+      case "Suppliers":
         return <Suppliers />;
+
+      case "Categories":
+        return <Categories />;
 
       case "Logout":
         return (
@@ -185,7 +191,6 @@ function App() {
 
   return (
     <div className="admin-layout">
-      {/* Sidebar stays common across dashboard pages */}
       <Sidebar
         activePage={activePage}
         setActivePage={handlePageChange}
@@ -194,7 +199,6 @@ function App() {
       />
 
       <div className="admin-main">
-        {/* Header stays common across dashboard pages */}
         <Header
           activePage={activePage}
           sidebarOpen={sidebarOpen}
@@ -208,12 +212,10 @@ function App() {
           setActivePage={handlePageChange}
         />
 
-        {/* Only this central content changes */}
         <main className="admin-content">
           {renderPage()}
         </main>
 
-        {/* Footer stays common across dashboard pages */}
         <Footer />
       </div>
     </div>

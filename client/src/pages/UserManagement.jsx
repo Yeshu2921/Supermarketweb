@@ -236,30 +236,35 @@ function UserManagement() {
     }
   }
 
-  async function handleDelete(user) {
-    if (user.role === "owner") return;
+  
+async function handleDelete(user) {
+  if (user.role === "owner") return;
 
-    const confirmed = window.confirm(
-      `Deactivate ${user.name}'s account? They will no longer be able to log in.`
+  const confirmed = window.confirm(
+    `Delete ${user.name}'s account? They will no longer be able to log in.`
+  );
+
+  if (!confirmed) return;
+
+  setError("");
+  setMessage("");
+
+  try {
+    const result = await apiRequest(`/users/${user.id}`, {
+      method: "DELETE",
+    });
+
+    setUsers((previous) =>
+      previous.filter((item) => item.id !== user.id)
     );
 
-    if (!confirmed) return;
-
-    try {
-      setError("");
-
-      await apiRequest(`/users/${user.id}`, {
-        method: "DELETE",
-      });
-
-      setUsers((previous) =>
-        previous.filter((item) => item.id !== user.id)
-      );
-      setMessage(`${user.name}'s account has been deactivated.`);
-    } catch (err) {
-      setError(err.message || "Could not deactivate this account.");
-    }
+    setMessage(
+      result.message || `${user.name}'s account deleted successfully.`
+    );
+  } catch (err) {
+    setError(err.message || "Could not delete this account.");
   }
+}
 
   async function handleResetPassword(user) {
     if (user.role === "owner") return;

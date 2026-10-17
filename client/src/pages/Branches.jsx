@@ -1,69 +1,63 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { apiRequest } from "../api";
 import "./Branches.css";
 
-const initialBranches = [
-  {
-    id: 1,
-    branchNumber: "BR-0001",
-    name: "Bahir Dar Main Branch",
-    location: "Bahir Dar, Amhara",
-    status: "Active",
-    createdAt: "2026-01-15",
-  },
-  {
-    id: 2,
-    branchNumber: "BR-0002",
-    name: "Addis Ababa Branch",
-    location: "Bole, Addis Ababa",
-    status: "Active",
-    createdAt: "2026-02-10",
-  },
-  {
-    id: 3,
-    branchNumber: "BR-0003",
-    name: "Gondar Branch",
-    location: "Gondar, Amhara",
-    status: "Inactive",
-    createdAt: "2026-03-05",
-  },
-  {
-    id: 4,
-    branchNumber: "BR-0004",
-    name: "Hawassa Branch",
-    location: "Hawassa, Sidama",
-    status: "Active",
-    createdAt: "2026-04-20",
-  },
-];
-
-const emptyForm = {
-  name: "",
-  location: "",
-};
-
 function Branches() {
-  const [branches, setBranches] = useState(initialBranches);
+  const [branches, setBranches] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState(emptyForm);
-  const [error, setError] = useState("");
 
-  const activeCount = branches.filter(
+  const [formData, setFormData] = useState({
+    name: "",
+    location: "",
+  });
+
+  // Load branches
+  async function loadBranches() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const data = await apiRequest("/branches");
+      setBranches(data.branches || []);
+    } catch (err) {
+      setError(err.message || "Failed to load branches.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadBranches();
+  }, []);
+
+  // Summary counts
+  const totalBranches = branches.length;
+
+  const activeBranches = branches.filter(
     (branch) => branch.status === "Active"
   ).length;
 
-  const inactiveCount = branches.length - activeCount;
+  const inactiveBranches = branches.filter(
+    (branch) => branch.status !== "Active"
+  ).length;
 
+  // Search and filter
   const filteredBranches = branches.filter((branch) => {
-    const searchText = search.trim().toLowerCase();
+    const query = search.toLowerCase();
 
     const matchesSearch =
-      branch.branchNumber.toLowerCase().includes(searchText) ||
-      branch.name.toLowerCase().includes(searchText) ||
-      branch.location.toLowerCase().includes(searchText);
+      String(branch.branchNumber || "").toLowerCase().includes(query) ||
+      String(branch.name || "").toLowerCase().includes(query) ||
+      String(branch.location || "").toLowerCase().includes(query);
 
     const matchesStatus =
       statusFilter === "All" || branch.status === statusFilter;
@@ -71,32 +65,41 @@ function Branches() {
     return matchesSearch && matchesStatus;
   });
 
+  // Open add form
   function openAddForm() {
     setEditingId(null);
-    setFormData({ ...emptyForm });
+    setFormData({ name: "", location: "" });
     setError("");
+    setSuccessMessage("");
     setShowForm(true);
   }
 
+  // Open edit form
   function openEditForm(branch) {
     setEditingId(branch.id);
+
     setFormData({
-      name: branch.name,
-      location: branch.location,
+      name: branch.name || "",
+      location: branch.location || "",
     });
+
     setError("");
+    setSuccessMessage("");
     setShowForm(true);
   }
 
+  // Close modal
   function closeForm() {
+    if (saving) return;
+
     setShowForm(false);
     setEditingId(null);
-    setFormData({ ...emptyForm });
-    setError("");
+    setFormData({ name: "", location: "" });
   }
 
-  function handleInputChange(event) {
-    const { name, value } = event.target;
+  // Handle input changes
+  function handleInputChange(e) {
+    const { name, value } = e.target;
 
     setFormData((previous) => ({
       ...previous,
@@ -104,109 +107,116 @@ function Branches() {
     }));
   }
 
-  function handleSubmit(event) {
-    event.preventDefault();
+  // Create or update branch
+  async function handleSaveBranch(e) {
+    e.preventDefault();
 
     const name = formData.name.trim();
     const location = formData.location.trim();
 
     if (!name || !location) {
-      setError("Please enter both the branch name and location.");
+      setError("Please enter the branch name and location.");
       return;
     }
 
-    const duplicateName = branches.some(
-      (branch) =>
-        branch.name.toLowerCase() === name.toLowerCase() &&
-        branch.id !== editingId
-    );
+    try {
+      setSaving(true);
+      setError("");
+      setSuccessMessage("");
 
-    if (duplicateName) {
-      setError("A branch with this name already exists.");
+      const payload = { name, location };
+      const isEditing = editingId !== null;
+
+      if (isEditing) {
+        await apiRequest(`/branches/${editingId}`, {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        });
+      } else {
+        await apiRequest("/branches", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+      }
+
+      // Close modal after successful save
+      setShowForm(false);
+      setEditingId(null);
+      setFormData({ name: "", location: "" });
+
+      // Show the correct success message
+      setSuccessMessage(
+        isEditing
+          ? "Branch updated successfully!"
+          : "Branch registered successfully!"
+      );
+
+      await loadBranches();
+    } catch (err) {
+      setError(err.message || "Failed to save branch.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // Activate or deactivate branch
+  async function toggleStatus(branch) {
+    const nextStatus =
+      branch.status === "Active" ? "Inactive" : "Active";
+
+    try {
+      setError("");
+      setSuccessMessage("");
+
+      await apiRequest(`/branches/${branch.id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: nextStatus }),
+      });
+
+      setSuccessMessage(
+        nextStatus === "Active"
+          ? "Branch activated successfully!"
+          : "Branch deactivated successfully!"
+      );
+
+      await loadBranches();
+    } catch (err) {
+      setError(err.message || "Failed to update branch status.");
+    }
+  }
+
+  // Delete branch
+  async function deleteBranch(id) {
+    if (!window.confirm("Are you sure you want to delete this branch?")) {
       return;
     }
 
-    if (editingId !== null) {
-      setBranches((previous) =>
-        previous.map((branch) =>
-          branch.id === editingId
-            ? { ...branch, name, location }
-            : branch
-        )
-      );
-    } else {
-      const nextId =
-        branches.length === 0
-          ? 1
-          : Math.max(...branches.map((branch) => branch.id)) + 1;
+    try {
+      setError("");
+      setSuccessMessage("");
 
-      const nextNumber =
-        branches.length === 0
-          ? 1
-          : Math.max(
-              ...branches.map(
-                (branch) =>
-                  Number(branch.branchNumber.replace("BR-", "")) || 0
-              )
-            ) + 1;
+      await apiRequest(`/branches/${id}`, {
+        method: "DELETE",
+      });
 
-      const newBranch = {
-        id: nextId,
-        branchNumber: `BR-${String(nextNumber).padStart(4, "0")}`,
-        name,
-        location,
-        status: "Active",
-        createdAt: new Date().toISOString().slice(0, 10),
-      };
+      setSuccessMessage("Branch deleted successfully!");
 
-      setBranches((previous) => [...previous, newBranch]);
-    }
-
-    closeForm();
-  }
-
-  function toggleBranchStatus(branchId) {
-    setBranches((previous) =>
-      previous.map((branch) =>
-        branch.id === branchId
-          ? {
-              ...branch,
-              status:
-                branch.status === "Active" ? "Inactive" : "Active",
-            }
-          : branch
-      )
-    );
-  }
-
-  function deleteBranch(branch) {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete ${branch.name} (${branch.branchNumber})?`
-    );
-
-    if (confirmed) {
-      setBranches((previous) =>
-        previous.filter((item) => item.id !== branch.id)
-      );
+      await loadBranches();
+    } catch (err) {
+      setError(err.message || "Failed to delete branch.");
     }
   }
 
   return (
     <div className="branches-page">
       {/* Page heading */}
-      <section className="branches-heading">
+      <div className="branches-heading">
         <div>
           <span className="branches-eyebrow">
-            <i className="bi bi-buildings me-2"></i>
-            BUSINESS MANAGEMENT
+            FRESHMART MANAGEMENT
           </span>
-
           <h2>Branches Management</h2>
-
-          <p>
-            Create, update, and control all branches across your
-            supermarket business.
-          </p>
+          <p>Manage your supermarket branches and locations.</p>
         </div>
 
         <button
@@ -214,198 +224,269 @@ function Branches() {
           className="add-branch-button"
           onClick={openAddForm}
         >
-          <i className="bi bi-plus-lg"></i>
-          Add New Branch
+          <i className="fa-solid fa-plus" />
+          Add Branch
         </button>
-      </section>
+      </div>
+
+      {/* Success message */}
+      {successMessage && (
+        <div className="branch-success-message" role="status">
+          <i className="fa-solid fa-circle-check" />
+          <span>{successMessage}</span>
+
+          <button
+            type="button"
+            onClick={() => setSuccessMessage("")}
+            aria-label="Dismiss success message"
+          >
+            <i className="fa-solid fa-xmark" />
+          </button>
+        </div>
+      )}
+
+      {/* Error message */}
+      {error && (
+        <div className="branch-form-error" role="alert">
+          <span>{error}</span>
+
+          <button
+            type="button"
+            onClick={() => setError("")}
+            aria-label="Dismiss error"
+            style={{
+              float: "right",
+              border: 0,
+              background: "transparent",
+              cursor: "pointer",
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Summary cards */}
-      <section className="branch-summary">
-        <article className="branch-summary-card">
+      <div className="branch-summary">
+        <div className="branch-summary-card">
           <div className="branch-summary-icon summary-total">
-            <i className="bi bi-buildings"></i>
+            <i className="fa-solid fa-store" />
           </div>
           <div>
             <p>Total Branches</p>
-            <h3>{branches.length}</h3>
+            <h3>{loading ? "—" : totalBranches}</h3>
             <small>All registered branches</small>
           </div>
-        </article>
+        </div>
 
-        <article className="branch-summary-card">
+        <div className="branch-summary-card">
           <div className="branch-summary-icon summary-active">
-            <i className="bi bi-check-circle"></i>
+            <i className="fa-solid fa-circle-check" />
           </div>
           <div>
             <p>Active Branches</p>
-            <h3>{activeCount}</h3>
-            <small>Currently operational</small>
+            <h3>{loading ? "—" : activeBranches}</h3>
+            <small>Currently active</small>
           </div>
-        </article>
+        </div>
 
-        <article className="branch-summary-card">
+        <div className="branch-summary-card">
           <div className="branch-summary-icon summary-inactive">
-            <i className="bi bi-pause-circle"></i>
+            <i className="fa-solid fa-store-slash" />
           </div>
           <div>
-            <p>Inactive Branches</p>
-            <h3>{inactiveCount}</h3>
-            <small>Temporarily disabled</small>
+            <p>Inactive / Closed</p>
+            <h3>{loading ? "—" : inactiveBranches}</h3>
+            <small>Inactive or temporarily closed</small>
           </div>
-        </article>
-      </section>
+        </div>
+      </div>
 
       {/* Branches table */}
-      <section className="branches-table-panel">
+      <div className="branches-table-panel">
         <div className="branches-toolbar">
           <div>
             <h4>All Branches</h4>
-            <p>Manage branch information and operating status.</p>
+            <p>View and manage registered branches.</p>
           </div>
 
           <div className="branches-filters">
             <div className="branch-search">
-              <i className="bi bi-search"></i>
+              <i className="fa-solid fa-magnifying-glass" />
               <input
                 type="search"
                 placeholder="Search branches..."
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
                 aria-label="Search branches"
               />
             </div>
 
             <select
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
-              aria-label="Filter by branch status"
               className="branch-status-filter"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              aria-label="Filter by status"
             >
-              <option value="All">All statuses</option>
+              <option value="All">All Statuses</option>
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
+              <option value="Temporarily Closed">
+                Temporarily Closed
+              </option>
             </select>
           </div>
         </div>
 
-        <div className="table-responsive">
-          <table className="table branches-table align-middle">
+        <div style={{ overflowX: "auto" }}>
+          <table className="branches-table">
             <thead>
               <tr>
-                <th>BRANCH</th>
-                <th>BRANCH NUMBER</th>
+                <th>BRANCH NO.</th>
+                <th>BRANCH NAME</th>
                 <th>LOCATION</th>
-                <th>CREATED</th>
+                <th>CREATED DATE</th>
                 <th>STATUS</th>
-                <th className="text-end">ACTIONS</th>
+                <th style={{ textAlign: "right" }}>ACTIONS</th>
               </tr>
             </thead>
 
             <tbody>
-              {filteredBranches.map((branch) => (
-                <tr key={branch.id}>
-                  <td>
-                    <div className="branch-name-cell">
-                      <div className="branch-table-icon">
-                        <i className="bi bi-shop"></i>
-                      </div>
-                      <strong>{branch.name}</strong>
-                    </div>
-                  </td>
-
-                  <td>
-                    <span className="branch-number">
-                      {branch.branchNumber}
-                    </span>
-                  </td>
-
-                  <td>
-                    <span className="branch-location">
-                      <i className="bi bi-geo-alt me-1"></i>
-                      {branch.location}
-                    </span>
-                  </td>
-
-                  <td className="branch-date">{branch.createdAt}</td>
-
-                  <td>
-                    <span
-                      className={`branch-status ${
-                        branch.status === "Active"
-                          ? "status-active"
-                          : "status-inactive"
-                      }`}
-                    >
-                      <span></span>
-                      {branch.status}
-                    </span>
-                  </td>
-
-                  {/* Action icons */}
-                  <td>
-                    <div className="branch-actions">
-                      <button
-                        type="button"
-                        className="branch-action-btn edit-btn"
-                        onClick={() => openEditForm(branch)}
-                        title="Edit branch"
-                        aria-label="Edit branch"
-                      >
-                        <i className="bi bi-pencil-square"></i>
-                      </button>
-
-                      <button
-                        type="button"
-                        className={`branch-action-btn ${
-                          branch.status === "Active"
-                            ? "status-active-btn"
-                            : "status-inactive-btn"
-                        }`}
-                        onClick={() => toggleBranchStatus(branch.id)}
-                        title={
-                          branch.status === "Active"
-                            ? "Deactivate branch"
-                            : "Activate branch"
-                        }
-                        aria-label={
-                          branch.status === "Active"
-                            ? "Deactivate branch"
-                            : "Activate branch"
-                        }
-                      >
-                        <i
-                          className={`bi ${
-                            branch.status === "Active"
-                              ? "bi-toggle-on"
-                              : "bi-toggle-off"
-                          }`}
-                        ></i>
-                      </button>
-
-                      <button
-                        type="button"
-                        className="branch-action-btn delete-btn"
-                        onClick={() => deleteBranch(branch)}
-                        title="Delete branch"
-                        aria-label="Delete branch"
-                      >
-                        <i className="bi bi-trash3"></i>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-
-              {filteredBranches.length === 0 && (
+              {loading ? (
                 <tr>
-                  <td colSpan="6">
-                    <div className="branches-empty">
-                      <i className="bi bi-search"></i>
-                      <h5>No branches found</h5>
-                      <p>Try another search or add a new branch.</p>
-                    </div>
+                  <td colSpan="6" className="branches-empty">
+                    <i className="fa-solid fa-spinner fa-spin" />
+                    <h5>Loading branches...</h5>
+                    <p>Please wait while data is loaded.</p>
                   </td>
                 </tr>
+              ) : filteredBranches.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="branches-empty">
+                    <i className="fa-solid fa-store" />
+                    <h5>No branches found</h5>
+                    <p>
+                      {branches.length === 0
+                        ? "Add your first branch to get started."
+                        : "Try changing your search or status filter."}
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                filteredBranches.map((branch) => {
+                  const branchNumber =
+                    branch.branchNumber ||
+                    `BR-${String(branch.id).padStart(4, "0")}`;
+
+                  const statusClass =
+                    branch.status === "Active"
+                      ? "status-active"
+                      : "status-inactive";
+
+                  const isActive = branch.status === "Active";
+
+                  return (
+                    <tr key={branch.id}>
+                      <td>
+                        <span className="branch-number">
+                          {branchNumber}
+                        </span>
+                      </td>
+
+                      <td>
+                        <div className="branch-name-cell">
+                          <div className="branch-table-icon">
+                            <i className="fa-solid fa-store" />
+                          </div>
+                          <strong title={branch.name}>
+                            {branch.name}
+                          </strong>
+                        </div>
+                      </td>
+
+                      <td>
+                        <span className="branch-location">
+                          <i className="fa-solid fa-location-dot" />{" "}
+                          {branch.location || "Not specified"}
+                        </span>
+                      </td>
+
+                      <td className="branch-date">
+                        {branch.createdAt || "—"}
+                      </td>
+
+                      <td>
+                        <span
+                          className={`branch-status ${statusClass}`}
+                        >
+                          <span />
+                          {branch.status}
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td>
+                        <div className="branch-actions">
+                          {/* Edit */}
+                          <button
+                            type="button"
+                            className="branch-action-btn edit-btn"
+                            title="Edit branch"
+                            aria-label="Edit branch"
+                            onClick={() => openEditForm(branch)}
+                          >
+                            <i className="fa-solid fa-pen-to-square" />
+                            <span>Edit</span>
+                          </button>
+
+                          {/* Activate / Deactivate */}
+                          <button
+                            type="button"
+                            className={`branch-action-btn ${
+                              isActive
+                                ? "status-active-btn"
+                                : "status-inactive-btn"
+                            }`}
+                            title={
+                              isActive
+                                ? "Deactivate branch"
+                                : "Activate branch"
+                            }
+                            aria-label={
+                              isActive
+                                ? "Deactivate branch"
+                                : "Activate branch"
+                            }
+                            onClick={() => toggleStatus(branch)}
+                          >
+                            <i
+                              className={`fa-solid ${
+                                isActive
+                                  ? "fa-toggle-on"
+                                  : "fa-toggle-off"
+                              }`}
+                            />
+                            <span>
+                              {isActive ? "Deact" : "Activ"}
+                            </span>
+                          </button>
+
+                          {/* Delete */}
+                          <button
+                            type="button"
+                            className="branch-action-btn delete-btn"
+                            title="Delete branch"
+                            aria-label="Delete branch"
+                            onClick={() => deleteBranch(branch.id)}
+                          >
+                            <i className="fa-solid fa-trash" />
+                            <span>Del</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -413,50 +494,41 @@ function Branches() {
 
         <div className="branches-table-footer">
           <span>
-            Showing {filteredBranches.length} of {branches.length} branches
+            Showing {loading ? 0 : filteredBranches.length} of{" "}
+            {branches.length} branches
           </span>
-          <span>
-            <i className="bi bi-shield-check me-1"></i>
-            Owner management
-          </span>
+          <span>FreshMart Branch Management</span>
         </div>
-      </section>
+      </div>
 
-      {/* Add/Edit branch modal */}
+      {/* Add / Edit modal */}
       {showForm && (
         <div
           className="branch-modal-backdrop"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
-              closeForm();
-            }
-          }}
+          onClick={closeForm}
         >
-          <section
+          <div
             className="branch-modal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="branch-modal-title"
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="branch-modal-header">
               <div className="branch-modal-heading-icon">
-                <i
-                  className={`bi ${
-                    editingId !== null
-                      ? "bi-pencil-square"
-                      : "bi-building-add"
-                  }`}
-                ></i>
+                <i className="fa-solid fa-store" />
               </div>
 
               <div>
                 <h4 id="branch-modal-title">
-                  {editingId !== null ? "Edit Branch" : "Add New Branch"}
+                  {editingId !== null
+                    ? "Edit Branch"
+                    : "Add New Branch"}
                 </h4>
                 <p>
                   {editingId !== null
-                    ? "Update the branch information below."
-                    : "Enter the information for your new branch."}
+                    ? "Update this branch's information."
+                    : "Enter the details of your new branch."}
                 </p>
               </div>
 
@@ -464,66 +536,55 @@ function Branches() {
                 type="button"
                 className="branch-modal-close"
                 onClick={closeForm}
-                aria-label="Close form"
+                disabled={saving}
+                aria-label="Close modal"
               >
-                <i className="bi bi-x-lg"></i>
+                <i className="fa-solid fa-xmark" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSaveBranch}>
               <div className="branch-modal-body">
                 {editingId !== null && (
                   <div className="branch-number-preview">
                     <label>Branch Number</label>
                     <strong>
-                      {
-                        branches.find(
-                          (branch) => branch.id === editingId
-                        )?.branchNumber
-                      }
+                      {branches.find(
+                        (branch) => branch.id === editingId
+                      )?.branchNumber ||
+                        `BR-${String(editingId).padStart(4, "0")}`}
                     </strong>
-                    <small>
-                      Unique branch number cannot be edited.
-                    </small>
+                    <small>Branch number cannot be changed.</small>
                   </div>
                 )}
 
                 <div className="branch-form-field">
-                  <label htmlFor="branchName">Branch Name *</label>
+                  <label htmlFor="branch-name">Branch Name *</label>
                   <input
-                    id="branchName"
-                    name="name"
+                    id="branch-name"
                     type="text"
+                    name="name"
+                    placeholder="e.g. Bahir Dar Branch"
                     value={formData.name}
                     onChange={handleInputChange}
-                    placeholder="e.g. Bahir Dar Main Branch"
-                    maxLength={100}
+                    maxLength={150}
                     required
                   />
                 </div>
 
                 <div className="branch-form-field">
-                  <label htmlFor="branchLocation">
-                    Branch Location *
-                  </label>
+                  <label htmlFor="branch-location">Location *</label>
                   <input
-                    id="branchLocation"
-                    name="location"
+                    id="branch-location"
                     type="text"
+                    name="location"
+                    placeholder="e.g. Bahir Dar, Ethiopia"
                     value={formData.location}
                     onChange={handleInputChange}
-                    placeholder="e.g. Bahir Dar, Amhara"
-                    maxLength={200}
+                    maxLength={255}
                     required
                   />
                 </div>
-
-                {error && (
-                  <div className="branch-form-error" role="alert">
-                    <i className="bi bi-exclamation-circle me-2"></i>
-                    {error}
-                  </div>
-                )}
               </div>
 
               <div className="branch-modal-footer">
@@ -531,19 +592,25 @@ function Branches() {
                   type="button"
                   className="branch-cancel-button"
                   onClick={closeForm}
+                  disabled={saving}
                 >
                   Cancel
                 </button>
 
-                <button type="submit" className="branch-save-button">
-                  <i className="bi bi-check2-circle me-2"></i>
-                  {editingId !== null
-                    ? "Save Changes"
-                    : "Create Branch"}
+                <button
+                  type="submit"
+                  className="branch-save-button"
+                  disabled={saving}
+                >
+                  {saving
+                    ? "Saving..."
+                    : editingId !== null
+                    ? "Update Branch"
+                    : "Save Branch"}
                 </button>
               </div>
             </form>
-          </section>
+          </div>
         </div>
       )}
     </div>
